@@ -1,0 +1,53 @@
+﻿@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject GameStateManager StateManager
+
+<div class="btn-group" role="group">
+    <button type="button" class="btn btn-primary" @onclick="() => InitNewGame()">Start New Game</button>
+    <button type="button" class="btn btn-secondary" @onclick="() => JoinExistingGame()">Join Existing Game</button>
+</div>
+
+@if (_gameType != GameType.None)
+{
+    <div class="form-group">
+        <label>Game Id</label>
+        <input type="text" class="form-control" @bind="StateManager.Game.Id" @bind:event="oninput" disabled="@(GameType.New == _gameType)" />
+    </div>
+    <div class="form-group">
+        <label>Your name:</label>
+        <input type="text" class="form-control" @bind="StateManager.Player.Name" @bind:event="oninput" />
+    </div>
+    <button class="btn btn-primary" @onclick="Start" disabled="@(StateManager.IsStateReady==false)">Play</button>
+}
+
+@code {
+    private GameType _gameType = GameType.None;
+
+    private void InitNewGame()
+    {
+        var random = new Random();
+
+        _gameType = GameType.New;
+        StateManager.Game = new Game { Id = random.Next(1000, 9999).ToString() };
+    }
+
+    private void JoinExistingGame()
+    {
+        _gameType = GameType.Existing;
+        StateManager.Game = new Game { Id = string.Empty };
+    }
+
+    private void Start()
+    {
+        NavigationManager.NavigateTo("/Play");
+    }
+
+    private enum GameType
+    {
+        None,
+        New,
+        Existing
+    }
+}

@@ -1,0 +1,97 @@
+﻿@page "/Play"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject GameStateManager StateManager
+@implements IDisposable
+
+<div>GameId:@StateManager.Game.Id</div>
+<div class="btn-group" role="group">
+    @foreach (var card in FibonacciDeck.Deck.Cards)
+    {
+        <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
+    }
+</div>
+
+@if (_gamePlays.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Player</th>
+                <th scope="col">Card Played</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var gamePlay in _gamePlays)
+            {
+            <tr>
+                <th scope="row">@gamePlay.Player.Name</th>
+                <td>
+                    @if (AllPlayersHavePlayed)
+                    {
+                        @gamePlay.CardPlayed.Text
+                    }
+                    else
+                    {
+                        @(gamePlay.HasPlayed ? "Voted" : "")
+                    }
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<button class="btn btn-primary" @onclick="ResetGame">Reset Game</button>
+
+@code {
+    private HubConnection _hubConnection;
+    private IEnumerable<GamePlay> _gamePlays = new List<GamePlay>();
+    private bool AllPlayersHavePlayed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ValidateGameState();
+
+        _hubConnection = new HubConnectionBuilder()
+        .WithUrl(NavigationManager.ToAbsoluteUri("/GameHub"))
+        .Build();
+
+        _hubConnection.On<IEnumerable<GamePlay>>("UpdateGame", (IEnumerable<GamePlay> gamePlays) =>
+        {
+            _gamePlays = gamePlays;
+            AllPlayersHavePlayed = _gamePlays.All(gp => gp.HasPlayed);
+            StateHasChanged();
+        });
+
+        await _hubConnection.StartAsync();
+
+        await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StateManager.Player, Game = StateManager.Game });
+    }
+
+    private async Task PlayCardAsync(Card card)
+    {
+        await _hubConnection.SendAsync("PlayCardAsync", new PlayCardRequest { CardPlayed = card });
+    }
+
+    private async Task ResetGame()
+    {
+        await _hubConnection.SendAsync("ResetGame", new ResetGameRequest { Game = StateManager.Game });
+    }
+
+    private void ValidateGameState() {
+        if (!StateManager.IsStateReady)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    public void Dispose()
+    {
+        _ = _hubConnection.DisposeAsync();
+    }
+}
