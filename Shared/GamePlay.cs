@@ -6,7 +6,6 @@
         public Game Game { get; set; }
         public Player Player { get; set; }
         public Card CardPlayed { get; set; }
-        public bool HasPlayed { get { return string.IsNullOrWhiteSpace(CardPlayed.Value) == false; } }
-
+        public bool HasPlayed => string.IsNullOrWhiteSpace(CardPlayed.Value) == false;
     }
 }

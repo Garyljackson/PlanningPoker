@@ -6,12 +6,6 @@ namespace PlanningPoker.Client.Services
     {
         public Player Player { get; set; } = new Player();
         public Game Game { get; set; } = new Game();
-        public bool IsStateReady
-        {
-            get
-            {
-                return !(string.IsNullOrWhiteSpace(Player.Name) || string.IsNullOrWhiteSpace(Game.Id));
-            }
-        }
+        public bool IsStateReady => !(string.IsNullOrWhiteSpace(Player.Name) || string.IsNullOrWhiteSpace(Game.Id));
     }
 }
